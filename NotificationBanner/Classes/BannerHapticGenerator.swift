@@ -16,6 +16,7 @@
  
  */
 
+#if !os(visionOS)
 import UIKit
 
 public enum BannerHaptic {
@@ -52,3 +53,4 @@ open class BannerHapticGenerator: NSObject {
         feedbackGenerator.impactOccurred()
     }
 }
+#endif

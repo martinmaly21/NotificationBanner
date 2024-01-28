@@ -101,8 +101,10 @@ open class BaseNotificationBanner: UIView {
         }
     }
 
+    #if !os(visionOS)
     /// The type of haptic to generate when a banner is displayed
     public var haptic: BannerHaptic = .heavy
+    #endif
 
     /// If true, notification will dismissed when tapped
     public var dismissOnTap: Bool = true
@@ -157,14 +159,18 @@ open class BaseNotificationBanner: UIView {
 
     /// The main window of the application which banner views are placed on
     private let appWindow: UIWindow? = {
-        if #available(iOS 13.0, *) {
-            return UIApplication.shared.connectedScenes
-                .first { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }
-                .map { $0 as? UIWindowScene }
-                .flatMap { $0?.windows.first } ?? UIApplication.shared.delegate?.window ?? UIApplication.shared.keyWindow
-        }
+        #if !os(visionOS)
+            if #available(iOS 13.0, *) {
+                return UIApplication.shared.connectedScenes
+                    .first { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }
+                    .map { $0 as? UIWindowScene }
+                    .flatMap { $0?.windows.first } ?? UIApplication.shared.delegate?.window ?? UIApplication.shared.keyWindow
+            }
 
-        return UIApplication.shared.delegate?.window ?? nil
+            return UIApplication.shared.delegate?.window ?? nil
+        #else
+            return UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.last
+        #endif
     }()
 
     /// The position the notification banner should slide in from
@@ -224,11 +230,13 @@ open class BaseNotificationBanner: UIView {
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(
-            self,
-            name: UIDevice.orientationDidChangeNotification,
-            object: nil
-        )
+        #if !os(visionOS)
+            NotificationCenter.default.removeObserver(
+                self,
+                name: UIDevice.orientationDidChangeNotification,
+                object: nil
+            )
+        #endif
     }
 
     /**
@@ -368,6 +376,7 @@ open class BaseNotificationBanner: UIView {
         createBannerConstraints(for: bannerPosition)
         updateBannerPositionFrames()
 
+        #if !os(visionOS)
         NotificationCenter.default.removeObserver(
             self,
             name: UIDevice.orientationDidChangeNotification,
@@ -380,6 +389,7 @@ open class BaseNotificationBanner: UIView {
             name: UIDevice.orientationDidChangeNotification,
             object: nil
         )
+        #endif
 
         if placeOnQueue {
             bannerQueue.addBanner(
@@ -434,7 +444,9 @@ open class BaseNotificationBanner: UIView {
                 initialSpringVelocity: 1,
                 options: [.curveLinear, .allowUserInteraction],
                 animations: {
-                    BannerHapticGenerator.generate(self.haptic)
+                    #if !os(visionOS)
+                        BannerHapticGenerator.generate(self.haptic)
+                    #endif
                     self.frame = self.bannerPositionFrame.endFrame
             }) { (completed) in
 
@@ -509,17 +521,21 @@ open class BaseNotificationBanner: UIView {
         The height adjustment needed in order for the banner to look properly displayed.
      */
     internal var heightAdjustment: CGFloat {
-        if NotificationBannerUtilities.hasDynamicIsland() {
-            return 16.0
-        }
-        
-        // iOS 13 does not allow covering the status bar on non-notch iPhones
-        // The banner needs to be moved further down under the status bar in this case
-        guard #available(iOS 13.0, *), !NotificationBannerUtilities.isNotchFeaturedIPhone() else {
-            return 0
-        }
+        #if os(visionOS)
+            return 10 // might need to change?
+        #else
+            if NotificationBannerUtilities.hasDynamicIsland() {
+                return 16.0
+            }
+            
+            // iOS 13 does not allow covering the status bar on non-notch iPhones
+            // The banner needs to be moved further down under the status bar in this case
+            guard #available(iOS 13.0, *), !NotificationBannerUtilities.isNotchFeaturedIPhone() else {
+                return 0
+            }
 
-        return UIApplication.shared.statusBarFrame.height
+            return UIApplication.shared.statusBarFrame.height
+        #endif
     }
 
     /**
@@ -668,20 +684,24 @@ open class BaseNotificationBanner: UIView {
         is supported by the current application.
      */
     private func currentDeviceOrientationIsSupportedByApp() -> Bool {
-        let supportedOrientations = UIApplication.shared.supportedInterfaceOrientations(for: appWindow)
-        
-        switch UIDevice.current.orientation {
-        case .portrait:
-            return supportedOrientations.contains(.portrait)
-        case .portraitUpsideDown:
-            return supportedOrientations.contains(.portraitUpsideDown)
-        case .landscapeLeft:
-            return supportedOrientations.contains(.landscapeLeft)
-        case .landscapeRight:
-            return supportedOrientations.contains(.landscapeRight)
-        default:
-            return false
-        }
+        #if !os(visionOS)
+            let supportedOrientations = UIApplication.shared.supportedInterfaceOrientations(for: appWindow)
+            
+            switch UIDevice.current.orientation {
+            case .portrait:
+                return supportedOrientations.contains(.portrait)
+            case .portraitUpsideDown:
+                return supportedOrientations.contains(.portraitUpsideDown)
+            case .landscapeLeft:
+                return supportedOrientations.contains(.landscapeLeft)
+            case .landscapeRight:
+                return supportedOrientations.contains(.landscapeRight)
+            default:
+                return false
+            }
+        #else
+            return true
+        #endif
     }
 
     /**
@@ -701,15 +721,23 @@ open class BaseNotificationBanner: UIView {
      */
 
     internal func shouldAdjustForDynamicIsland() -> Bool {
-        return NotificationBannerUtilities.hasDynamicIsland()
-            && UIApplication.shared.statusBarOrientation.isPortrait
-            && (self.parentViewController?.navigationController?.isNavigationBarHidden ?? true)
+        #if os(visionOS)
+            return false
+        #else
+            return NotificationBannerUtilities.hasDynamicIsland()
+                && UIApplication.shared.statusBarOrientation.isPortrait
+                && (self.parentViewController?.navigationController?.isNavigationBarHidden ?? true)
+        #endif
     }
     
     internal func shouldAdjustForNotchFeaturedIphone() -> Bool {
-        return NotificationBannerUtilities.isNotchFeaturedIPhone()
-            && UIApplication.shared.statusBarOrientation.isPortrait
-            && (self.parentViewController?.navigationController?.isNavigationBarHidden ?? true)
+        #if os(visionOS)
+            return false
+        #else
+            return NotificationBannerUtilities.isNotchFeaturedIPhone()
+                && UIApplication.shared.statusBarOrientation.isPortrait
+                && (self.parentViewController?.navigationController?.isNavigationBarHidden ?? true)
+        #endif
     }
     /**
         Updates the scrolling marquee label duration

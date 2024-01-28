@@ -3,11 +3,11 @@
     "pins": [
       {
         "package": "MarqueeLabel",
-        "repositoryURL": "https://github.com/cbpowell/MarqueeLabel",
+        "repositoryURL": "https://github.com/martinmaly21/MarqueeLabel",
         "state": {
           "branch": null,
-          "revision": "f2c72a5f8568579dade6350dc26a482076d3d346",
-          "version": "4.3.0"
+          "revision": "56347f370ef4400e388396e0ee53e3ca2e3882ef",
+          "version": null
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/SnapKit/SnapKit",
         "state": {
           "branch": null,
-          "revision": "f222cbdf325885926566172f6f5f06af95473158",
-          "version": "5.6.0"
+          "revision": "e74fe2a978d1216c3602b129447c7301573cc2d8",
+          "version": "5.7.0"
         }
       }
     ]

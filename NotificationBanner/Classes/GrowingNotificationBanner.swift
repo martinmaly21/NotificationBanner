@@ -35,12 +35,12 @@ open class GrowingNotificationBanner: BaseNotificationBanner {
                 // Calculate the height based on contents of labels
                 
                 // Determine available width for displaying the label
-                var boundingWidth = UIScreen.main.bounds.width - padding * 2
+                var boundingWidth = (UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.last?.bounds.size.width ?? 0) - padding * 2
                 
                 // Substract safeAreaInsets from width, if available
                 // We have to use keyWindow to ask for safeAreaInsets as `self` only knows its' safeAreaInsets in layoutSubviews
-                if #available(iOS 11.0, *), let keyWindow = UIApplication.shared.keyWindow {
-                    let safeAreaOffset = keyWindow.safeAreaInsets.left + keyWindow.safeAreaInsets.right
+                if #available(iOS 11.0, *) {
+                    let safeAreaOffset = (UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.last?.safeAreaInsets.left ?? 0) + (UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.last?.safeAreaInsets.right ?? 0)
                     
                     boundingWidth -= safeAreaOffset
                 }
