@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "NotificationBannerSwift",
     platforms: [
-        .iOS(.v10)
+        .iOS("15.0")
     ],
     products: [
         .library(name: "NotificationBannerSwift", targets: ["NotificationBannerSwift"])
